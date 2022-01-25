@@ -7,7 +7,7 @@ fn main() {
 
 fn app(cx: Scope) -> Element {
     let sec = use_ref(&cx, || 5);
-    use_future(&cx, || {
+    let coroutine_handle = use_coroutine(&cx, || {
         let sec = sec.clone(); // future static var should be cloned
         async move {
             loop {
@@ -16,6 +16,15 @@ fn app(cx: Scope) -> Element {
             }
         }
     });
+    // use_future(&cx, || {
+    //     let sec = sec.clone(); // future static var should be cloned
+    //     async move {
+    //         loop {
+    //             TimeoutFuture::new(1_000).await;
+    //             *sec.write() += 5;
+    //         }
+    //     }
+    // });
     let cur_sec = sec.read();
     cx.render(rsx!(
         body {
@@ -37,9 +46,10 @@ fn app(cx: Scope) -> Element {
             }
             div {
                 h1 {"{cur_sec}"}
-                // button { onclick: move |_| {sec += 5}, "+" }
-                // button { onclick: move |_| set_state(sec - 5), "-" }
-                // button { onclick: move |_| set_state(sec + 0), "Start" }
+                button { onclick: move |_| {*sec.write() += 5}, "+" }
+                button { onclick: move |_| {*sec.write() -= 5}, "-" }
+                // button { onclick: move |_| {coroutine_handle.start()}, "Start" }
+                button { onclick: move |_| {coroutine_handle.stop()}, "Stop" }
             }
         }
     ))
